@@ -1,143 +1,40 @@
 "use strict";
-
-const form = document.querySelector("#qr-form");
-const input = document.querySelector("#url");
-const error = document.querySelector("#error");
-const canvas = document.querySelector("#qr-canvas");
-const empty = document.querySelector("#empty");
-const status = document.querySelector("#status");
-const encodedUrl = document.querySelector("#encoded-url");
-const pngButton = document.querySelector("#download-png");
-const svgButton = document.querySelector("#download-svg");
-let svg = "";
-let filename = "qr-code";
-
-function showError(message) {
-  error.textContent = message;
-  error.hidden = false;
-}
-
-function clearResult() {
-  canvas.hidden = true;
-  empty.hidden = false;
-  encodedUrl.hidden = true;
-  encodedUrl.textContent = "";
-  pngButton.disabled = true;
-  svgButton.disabled = true;
-  svg = "";
-  status.textContent = "Add a link to create your code.";
-}
-
-input.addEventListener("input", () => {
-  clearResult();
-  error.hidden = true;
-  input.removeAttribute("aria-invalid");
-});
-
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
-  clearResult();
-  error.hidden = true;
-  input.removeAttribute("aria-invalid");
-
-  let url;
-  try {
-    url = new URL(input.value.trim());
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
-      throw new Error("Unsupported protocol");
-    }
-  } catch {
-    input.setAttribute("aria-invalid", "true");
-    showError("Enter a full website URL starting with https:// or http://.");
-    input.focus();
-    return;
-  }
-
-  try {
-    qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
-    const code = qrcode(0, "M");
-    code.addData(url.href);
-    code.make();
-
-    // Four modules of white space on every side keep the code scannable.
-    const quietZone = 4;
-    const modules = code.getModuleCount();
-    const size = modules + quietZone * 2;
-    const scale = Math.max(4, Math.floor(1024 / size));
-    canvas.width = canvas.height = size * scale;
-    const context = canvas.getContext("2d");
-    if (!context) {
-      throw new Error("Canvas is unavailable in this browser.");
-    }
-    context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "#000000";
-    let path = "";
-    for (let row = 0; row < modules; row += 1) {
-      for (let column = 0; column < modules; column += 1) {
-        if (code.isDark(row, column)) {
-          const x = column + quietZone;
-          const y = row + quietZone;
-          context.fillRect(x * scale, y * scale, scale, scale);
-          path += `M${x} ${y}h1v1h-1z`;
-        }
-      }
-    }
-    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size * scale}" height="${size * scale}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${path}" fill="#000"/></svg>`;
-    filename = `qr-${url.hostname.replace(/[^a-z0-9.-]/gi, "-")}`;
-    encodedUrl.textContent = url.href;
-    encodedUrl.hidden = false;
-    canvas.hidden = false;
-    empty.hidden = true;
-    pngButton.disabled = false;
-    svgButton.disabled = false;
-    status.textContent = "Ready! Scan with your camera or download below.";
-  } catch (cause) {
-    clearResult();
-    console.error("QR generation failed:", cause);
-    const tooLong = String(cause).includes("code length overflow");
-    showError(tooLong
-      ? "This URL is too long for a QR code. Try a shorter link."
-      : "The QR code could not be created. Please try again or use a different browser.");
-  }
-});
-
-function download(blob, extension) {
-  const objectUrl = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = objectUrl;
-  link.download = `${filename}.${extension}`;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-}
-
-pngButton.addEventListener("click", () => {
-  try {
-    const dataUrl = canvas.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = `${filename}.png`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-  } catch (cause) {
-    console.error("PNG download failed:", cause);
-    showError("The PNG could not be downloaded. Try downloading the SVG instead.");
-  }
-});
-
-svgButton.addEventListener("click", () => {
-  try {
-    download(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), "svg");
-  } catch (cause) {
-    console.error("SVG download failed:", cause);
-    showError("The SVG could not be downloaded. Try downloading the PNG instead.");
-  }
-});
-
-if (typeof qrcode !== "function") {
-  document.querySelector("#generate").disabled = true;
-  showError("The QR library could not load. Reload the page and make sure vendor/qrcode.js is present.");
-}
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+let type = "url", template = "plain", logoImage = null, outputSVG = "", fileName = "qr-studio", generation = 0, lastPayload = "";
+const definitions = {
+ url: [['url','Website URL','url','https://example.com']],
+ wifi: [['ssid','Network name (SSID)','text','My Wi-Fi'],['password','Password','text',''],['security','Security','select',['WPA','WEP','nopass']],['hidden','Hidden network','checkbox']],
+ contact: [['name','Full name','text','Alex Rivera'],['phone','Phone number','tel','+1 555 123 4567'],['email','Email','email','alex@example.com'],['organization','Organization','text','Optional'],['website','Website','url','https://example.com']],
+ email: [['to','Email address','email','hello@example.com'],['subject','Subject','text','Hello!'],['body','Message','text','']],
+ sms: [['phone','Phone number','tel','+1 555 123 4567'],['message','Message','text','']],
+ event: [['title','Event title','text','Open studio'],['start','Starts','datetime-local',''],['end','Ends','datetime-local',''],['location','Location','text',''],['description','Description','text','']]
+};
+function fields(){ $('#fields').replaceChildren();for(const [id,name,kind,hint] of definitions[type]){const label=document.createElement('label');label.htmlFor=`f-${id}`;label.textContent=name;let el;if(kind==='select'){el=document.createElement('select');for(const value of hint){const opt=document.createElement('option');opt.value=value;opt.textContent=value==='nopass'?'Open / no password':value;el.append(opt)}}else{el=document.createElement('input');el.type=kind; if(kind==='checkbox'){el.style.display='block';el.style.marginTop='10px'}else if(hint)el.placeholder=hint;}el.id=`f-${id}`;el.addEventListener('input',schedule);el.addEventListener('change',schedule);label.append(el);$('#fields').append(label)} }
+function val(key){return ($('#f-'+key)?.value||'').trim()}
+const escapeWiFi = s=>s.replace(/([\\;,:" ])/g,'\\$1');
+const ics = s=>s.replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/[,;]/g,c=>'\\'+c);
+function stamp(str){if(!str)return '';const d=new Date(str);if(Number.isNaN(d.getTime()))throw Error('Enter valid event dates.');return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'T'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+'00'}
+function encode(){switch(type){case 'url':{const u=new URL(val('url'));if(!['http:','https:'].includes(u.protocol))throw Error('Use a link starting with https:// or http://.');return u.href}case 'wifi':{if(!val('ssid'))throw Error('Enter a Wi-Fi network name.');let sec=val('security');if(sec!=='nopass'&&!val('password'))throw Error('Enter a Wi-Fi password or choose an open network.');return `WIFI:T:${sec};S:${escapeWiFi(val('ssid'))};P:${escapeWiFi(val('password'))};H:${$('#f-hidden').checked?'true':'false'};;`}case 'contact':{if(!val('name'))throw Error('Enter the contact’s name.');return ['BEGIN:VCARD','VERSION:3.0',`FN:${ics(val('name'))}`,val('phone')&&`TEL:${ics(val('phone'))}`,val('email')&&`EMAIL:${ics(val('email'))}`,val('organization')&&`ORG:${ics(val('organization'))}`,val('website')&&`URL:${ics(val('website'))}`,'END:VCARD'].filter(Boolean).join('\r\n')}case 'email':{if(!val('to')||!$('#f-to').checkValidity())throw Error('Enter a valid email address.');return `mailto:${val('to')}?subject=${encodeURIComponent(val('subject'))}&body=${encodeURIComponent(val('body'))}`}case 'sms':{if(!val('phone'))throw Error('Enter a phone number.');return `SMSTO:${val('phone')}:${val('message')}`}case 'event':{if(!val('title')||!val('start')||!val('end'))throw Error('Add an event title, start and end time.');if(new Date(val('end'))<=new Date(val('start')))throw Error('The event must end after it starts.');return ['BEGIN:VCALENDAR','VERSION:2.0','BEGIN:VEVENT',`SUMMARY:${ics(val('title'))}`,`DTSTART:${stamp(val('start'))}`,`DTEND:${stamp(val('end'))}`,val('location')&&`LOCATION:${ics(val('location'))}`,val('description')&&`DESCRIPTION:${ics(val('description'))}`,'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n')}}}
+function hex(c){return [1,3,5].map(i=>parseInt(c.slice(i,i+2),16))}
+function lum(c){const a=hex(c).map(x=>{x/=255;return x<=.04045?x/12.92:Math.pow((x+.055)/1.055,2.4)});return a[0]*.2126+a[1]*.7152+a[2]*.0722}
+function contrast(a,b){const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+function xml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]))}
+function shapeSVG(x,y,s,style){const inset=style==='round'?.12:0;return style==='round'?`<circle cx="${x+s/2}" cy="${y+s/2}" r="${s*.42}"/>`:style==='rounded'?`<rect x="${x}" y="${y}" width="${s}" height="${s}" rx="${s*.24}"/>`:`<rect x="${x}" y="${y}" width="${s}" height="${s}"/>`}
+function renderQR(code,fg,bg,grad,shape,logo){const n=code.getModuleCount(),q=4,unit=10,total=(n+8)*unit;let modules='',gradient=grad?`<defs><linearGradient id="ink" x2="1" y2="1"><stop stop-color="${fg}"/><stop offset="1" stop-color="#d77953"/></linearGradient></defs>`:'';const center=(n-1)/2;const radius=logo?Math.min(n*.115,5.4):0;
+for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(code.isDark(r,c)){const eye=(r<8&&c<8)||(r<8&&c>=n-8)||(r>=n-8&&c<8);if(logo&&Math.abs(r-center)<radius+1.3&&Math.abs(c-center)<radius+1.3)continue;const st=eye?'square':shape;modules+=shapeSVG((c+q)*unit,(r+q)*unit,unit,st)}
+let logoMarkup='';if(logo){const side=total*.19,x=(total-side)/2;logoMarkup=`<rect x="${x-7}" y="${x-7}" width="${side+14}" height="${side+14}" rx="12" fill="${bg}"/><image href="${logo}" x="${x}" y="${x}" width="${side}" height="${side}" preserveAspectRatio="xMidYMid meet"/>`}
+return {svg:`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${total} ${total}" width="${total}" height="${total}">${gradient}<rect width="${total}" height="${total}" fill="${bg}"/><g fill="${grad?'url(#ink)':fg}">${modules}</g>${logoMarkup}</svg>`,total}}
+function compose(code){const fg=$('#dark').value,bg=$('#light').value,grad=$('#gradient').checked,shape=$('#shape').value;const qr=renderQR(code,fg,bg,grad,shape,logoImage);if(template==='plain')return qr.svg;
+const portrait=template==='poster',w=800,h=portrait?1120:900,qrSide=portrait?565:570,qrY=portrait?260:185;
+const label=xml($('#caption').value.trim()||'Scan me!');const qrX=(w-qrSide)/2;
+return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="${portrait?'#f4dfce':'#e8eee7'}"/><rect x="38" y="38" width="724" height="${h-76}" rx="35" fill="#fffdf9"/><text x="400" y="${portrait?161:116}" text-anchor="middle" font-family="Arial,sans-serif" fill="#254a3b" font-size="${portrait?44:33}" font-weight="bold">${label}</text><svg x="${qrX}" y="${qrY}" width="${qrSide}" height="${qrSide}" viewBox="0 0 ${qr.total} ${qr.total}">${qr.svg.replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')}</svg><text x="400" y="${portrait?980:800}" text-anchor="middle" font-family="Arial,sans-serif" font-size="21" letter-spacing="5" fill="#8a7766">POINT · SCAN · CONNECT</text></svg>`}
+let timer;function schedule(){clearTimeout(timer);timer=setTimeout(generate,210)}
+function showError(s){$('#error').textContent=s;$('#error').hidden=false}
+async function generate(){const current=++generation;$('#error').hidden=true;let payload;try{payload=encode()}catch(e){$('#status').textContent='Complete the details to see your code.';$('#safety').textContent='Add valid information to preview your design.';disable();return}try{qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];const code=qrcode(0,$('#ecc').value);code.addData(payload);code.make();const svg=compose(code);const img=new Image();img.onload=async()=>{if(current!==generation)return;const canvas=$('#qr-canvas');const ctx=canvas.getContext('2d');canvas.width=img.naturalWidth||800;canvas.height=img.naturalHeight||800;ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);outputSVG=svg;lastPayload=payload;fileName=`qr-studio-${type}`;$('#download-png').disabled=$('#download-svg').disabled=$('#print').disabled=false;$('#status').textContent='Ready to download and share.';let warnings=[];const ratio=contrast($('#dark').value,$('#light').value);if(ratio<4.5)warnings.push('Low contrast can make scanning difficult.');if($('#gradient').checked)warnings.push('Gradients can reduce scan reliability.');if($('#shape').value!=='square')warnings.push('Decorative dots should be tested on different phones.');if(logoImage)warnings.push('A center logo may obstruct QR data.');if(code.getModuleCount()>73)warnings.push('Dense code: consider shortening your content.');$('#safety').classList.toggle('warn',warnings.length>0);$('#safety').textContent=warnings.length?'⚠ '+warnings.join(' '):'✓ Good contrast and standard QR layout. Test before printing.';
+if('BarcodeDetector' in window){try{const detector=new BarcodeDetector({formats:['qr_code']});const found=await detector.detect(canvas);if(current!==generation)return;if(!found.length){$('#safety').classList.add('warn');$('#safety').textContent+=' Automatic scan check could not read this preview.'}else if(found.some(f=>f.rawValue===payload)){$('#safety').textContent+=' ✓ Browser scan check passed.'}}catch(_){/* decoder support varies */}}
+};img.onerror=()=>{if(current===generation)showError('Could not render QR preview.')};img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)}catch(e){disable();showError(String(e).includes('code length overflow')?'That is too much data for one QR code. Try shorter content.':'Could not create this QR code. Check the content and try again.')}}
+function disable(){$('#download-png').disabled=$('#download-svg').disabled=$('#print').disabled=true;outputSVG=''}
+function download(blob,ext){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=`${fileName}.${ext}`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
+$('#download-png').onclick=()=>$('#qr-canvas').toBlob(b=>b?download(b,'png'):showError('PNG export failed.'),'image/png');$('#download-svg').onclick=()=>download(new Blob([outputSVG],{type:'image/svg+xml;charset=utf-8'}),'svg');$('#print').onclick=()=>{const p=window.open('','_blank');if(!p){showError('Allow pop-ups to print your QR design, or download the PNG instead.');return}p.document.write('<!doctype html><html><head><title>Print QR design</title><style>body{margin:0;display:grid;place-items:center;min-height:100vh}svg{max-width:90vw;max-height:90vh}@media print{@page{margin:10mm}}</style></head><body>'+outputSVG+'<script>window.onload=()=>window.print()<\/script></body></html>');p.document.close()};
+$$('.type').forEach(b=>b.onclick=()=>{type=b.dataset.type;$$('.type').forEach(x=>x.classList.toggle('active',x===b));fields();generate()});$$('.template').forEach(b=>b.onclick=()=>{template=b.dataset.template;$$('.template').forEach(x=>x.classList.toggle('active',x===b));schedule()});['dark','light','gradient','shape','ecc','caption'].forEach(id=>$('#'+id).addEventListener('input',schedule));$('#qr-form').addEventListener('submit',e=>{e.preventDefault();try{encode();generate()}catch(err){showError(err.message)}});$('#logo').onchange=e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>2*1024*1024){showError('Choose a logo smaller than 2 MB.');e.target.value='';return}const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=c.height=180;const ctx=c.getContext('2d');const ratio=Math.min(180/img.width,180/img.height);ctx.drawImage(img,(180-img.width*ratio)/2,(180-img.height*ratio)/2,img.width*ratio,img.height*ratio);logoImage=c.toDataURL('image/png');$('#remove-logo').hidden=false;schedule()};img.src=reader.result};reader.readAsDataURL(f)};$('#remove-logo').onclick=()=>{logoImage=null;$('#logo').value='';$('#remove-logo').hidden=true;schedule()};fields();generate();

@@ -1,86 +1,13 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Create and download QR codes for your links. Free, private, and entirely in your browser.">
-  <meta name="theme-color" content="#f5f7fb">
-  <title>Link to QR | Free QR Code Generator</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="vendor/qrcode.js" defer></script>
-  <script src="app.js" defer></script>
-</head>
-<body>
-  <main class="page">
-    <header class="brand">
-      <span class="brand-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 14v3h3v4M21 13v3M13 21h2M21 20v1"/>
-        </svg>
-      </span>
-      Link to QR
-    </header>
-
-    <section class="intro" aria-labelledby="page-title">
-      <p class="eyebrow">A SMALL TOOL FOR SHARING BIG IDEAS</p>
-      <h1 id="page-title">Your link.<br><span>One scan away.</span></h1>
-      <p>Turn any URL into a QR code. Make it, download it, share it.</p>
-    </section>
-
-    <div class="workspace">
-      <section class="editor" aria-labelledby="editor-title">
-        <span class="step">01 / ADD YOUR LINK</span>
-        <h2 id="editor-title">Where should we go?</h2>
-        <p class="description">A website, a playlist, your next big thing. Just paste the full link below.</p>
-
-        <form id="qr-form" novalidate>
-          <label for="url">Website URL</label>
-          <input id="url" name="url" type="url" inputmode="url" placeholder="https://example.com"
-            autocomplete="url" spellcheck="false" required aria-describedby="url-hint error">
-          <p id="url-hint" class="hint">Include https:// or http:// at the start.</p>
-          <p id="error" class="error" role="alert" hidden></p>
-          <button class="button primary" id="generate" type="submit">
-            Generate QR code <span aria-hidden="true">&rarr;</span>
-          </button>
-        </form>
-
-        <div class="privacy">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-            <rect x="5" y="10" width="14" height="11" rx="2"/>
-            <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/>
-          </svg>
-          <p><strong>Your links stay yours.</strong><br>Generated in your browser. No uploads, no tracking.</p>
-        </div>
-      </section>
-
-      <section class="preview" aria-labelledby="preview-title">
-        <div class="preview-header">
-          <h2 id="preview-title">Your QR code</h2>
-          <span class="badge">READY TO SHARE</span>
-        </div>
-        <div class="qr-frame">
-          <div id="empty" class="empty">
-            <svg aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5">
-              <path d="M13 13h25v25H13zM62 13h25v25H62zM13 62h25v25H13z"/>
-              <path d="M22 22h7v7h-7zM71 22h7v7h-7zM22 71h7v7h-7z" fill="currentColor" stroke="none"/>
-              <path d="M62 58v15h14v14M86 56v11M54 87h10M86 81v6M49 13v12M13 49h12M39 49h13v15"/>
-            </svg>
-            <p>Your next connection starts here</p>
-          </div>
-          <canvas id="qr-canvas" role="img" aria-label="Generated QR code" hidden></canvas>
-        </div>
-        <p id="status" class="status" role="status" aria-live="polite">Add a link to create your code.</p>
-        <p id="encoded-url" class="encoded-url" hidden></p>
-        <div class="downloads">
-          <button id="download-png" class="button secondary" type="button" disabled>Download PNG</button>
-          <button id="download-svg" class="button secondary" type="button" disabled>Download SVG</button>
-        </div>
-        <p class="hint preview-hint">PNG for everyday sharing. SVG for crisp prints at any size.</p>
-      </section>
-    </div>
-
-    <footer>No sign-up. No expiring codes. Just your link, made scannable.</footer>
-    <noscript><p class="error">Please enable JavaScript to generate QR codes. Your URL will stay in your browser.</p></noscript>
-  </main>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#faf7f2"><meta name="description" content="Make beautiful, free QR codes for links, Wi-Fi, contacts and events. Private by design."><title>QR Studio · Make something worth scanning</title><link rel="stylesheet" href="styles.css"><script src="vendor/qrcode.js" defer></script><script src="app.js" defer></script></head>
+<body><div class="shell"><header class="top"><a class="mark" href="./" aria-label="QR Studio home"><span class="mark-icon">▦</span> QR<span>Studio</span></a><span class="top-note">FREE · PRIVATE · YOURS</span></header>
+<section class="hero"><div><p class="kicker">THE LITTLE STUDIO FOR BIG CONNECTIONS</p><h1>Make something<br><em>worth scanning.</em></h1><p class="lede">Design a QR code that looks like you. Customize the details, make a card or sign, and download it in seconds.</p></div><span class="sparkle" aria-hidden="true">✳</span></section>
+<main class="layout"><section class="controls" aria-label="QR editor"><div class="section-head"><span class="number">01</span><div><h2>What are we sharing?</h2><p>Pick what your QR code will do.</p></div></div>
+<div class="types" role="group" aria-label="QR type"><button class="type active" data-type="url">↗ <span>Website</span></button><button class="type" data-type="wifi">◉ <span>Wi-Fi</span></button><button class="type" data-type="contact">♙ <span>Contact</span></button><button class="type" data-type="email">✉ <span>Email</span></button><button class="type" data-type="sms">☏ <span>Text</span></button><button class="type" data-type="event">▦ <span>Event</span></button></div>
+<form id="qr-form" novalidate><div id="fields" class="fields"></div><p id="error" class="error" role="alert" hidden></p><div class="rule"></div>
+<div class="section-head"><span class="number">02</span><div><h2>Make it yours</h2><p>A little personality goes a long way.</p></div></div>
+<div class="two"><label>Code color <input id="dark" type="color" value="#173f37"></label><label>Background <input id="light" type="color" value="#ffffff"></label></div><label class="inline-check"><input id="gradient" type="checkbox"> Use a subtle gradient</label>
+<div class="two"><label>Dot style<select id="shape"><option value="square">Classic squares</option><option value="round">Soft dots</option><option value="rounded">Rounded tiles</option></select></label><label>Correction level<select id="ecc"><option value="M">Standard</option><option value="Q">Higher</option><option value="H" selected>Highest (for logos)</option></select></label></div>
+<label for="logo">Center logo <small>(optional, PNG / JPG)</small></label><input id="logo" type="file" accept="image/png,image/jpeg,image/webp"><button type="button" class="text-button" id="remove-logo" hidden>Remove logo</button><p class="tiny">Logos are kept small to improve scannability. Uploaded images stay on your device.</p>
+<div class="rule"></div><div class="section-head"><span class="number">03</span><div><h2>Dress it up</h2><p>Choose how you'll share it.</p></div></div><div class="template-options" role="group" aria-label="Print design"><button type="button" class="template active" data-template="plain">Just the QR</button><button type="button" class="template" data-template="card">Little card</button><button type="button" class="template" data-template="poster">Mini poster</button></div><label for="caption">Caption for card or poster</label><input id="caption" maxlength="55" placeholder="Scan to say hello" value="Scan me!"><button id="generate" class="primary" type="submit">Create my QR <span aria-hidden="true">↗</span></button></form></section>
+<aside class="result"><div class="result-top"><div><span class="overline">YOUR CREATION</span><h2>Looking good already.</h2></div><span class="pill">LIVE PREVIEW</span></div><div class="paper"><canvas id="qr-canvas" aria-label="QR code preview" role="img"></canvas></div><div id="safety" class="safety" role="status" aria-live="polite">Start by adding something to share.</div><p id="status" class="status" role="status" aria-live="polite">Your design will appear here as you edit.</p><div class="downloads"><button id="download-png" disabled>↓ PNG</button><button id="download-svg" disabled>↓ SVG</button><button id="print" disabled>▤ Print</button></div><p class="tiny">For best results, test the downloaded code with your phone before printing lots of copies.</p><div class="privacy"><span>♡</span><p><strong>Private by design.</strong> Everything happens in your browser. No account, analytics, uploads, or expiring codes.</p></div></aside></main><footer><span>Made for sharing good things.</span><span>QR Studio · Free forever to use</span></footer></div></body></html>
